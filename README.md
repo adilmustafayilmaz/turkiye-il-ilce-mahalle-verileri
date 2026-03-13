@@ -12,9 +12,19 @@ Uretilen JSON dosyasi her il icin su bilgileri icerir:
 
 ## Kurulum
 
+**Linux / macOS:**
+
 ```bash
 python -m venv venv
 source venv/bin/activate
+pip install requests
+```
+
+**Windows:**
+
+```bash
+python -m venv venv
+venv\Scripts\activate
 pip install requests
 ```
 
