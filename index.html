@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Türkiye İl İlçe Mahalle Arama | Turkey Province District Neighborhood Search</title>
+  <meta name="description" content="Türkiye'nin 81 iline ait ilçe ve mahalle verilerini arayın. 973 ilçe, 32.186 mahalle. Search Turkey's provinces, districts and neighborhoods.">
+  <meta name="keywords" content="türkiye, il, ilçe, mahalle, arama, turkey, province, district, neighborhood, search, adres, address, json, açık veri, open data">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #282828;
+      color: #ebdbb2;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      text-align: center;
+      margin-bottom: 6px;
+      color: #fbf1c7;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #a89984;
+      font-size: 0.9rem;
+      margin-bottom: 30px;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-num {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #b8bb26;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: #a89984;
+    }
+
+    .search-box {
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 1rem;
+      border: 1px solid #504945;
+      border-radius: 8px;
+      background: #3c3836;
+      color: #ebdbb2;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-box input:focus {
+      border-color: #fabd2f;
+    }
+
+    .search-box input::placeholder {
+      color: #665c54;
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      border: 1px solid #504945;
+      border-radius: 20px;
+      background: transparent;
+      color: #a89984;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-btn.active {
+      background: #fabd2f;
+      color: #282828;
+      border-color: #fabd2f;
+    }
+
+    .results {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .result-item {
+      padding: 14px 16px;
+      background: #3c3836;
+      border: 1px solid #504945;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .result-item:hover {
+      border-color: #fe8019;
+    }
+
+    .result-type {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #fe8019;
+      margin-bottom: 2px;
+    }
+
+    .result-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fbf1c7;
+    }
+
+    .result-path {
+      font-size: 0.8rem;
+      color: #a89984;
+      margin-top: 2px;
+    }
+
+    .detail-panel {
+      margin-top: 24px;
+      padding: 20px;
+      background: #3c3836;
+      border: 1px solid #504945;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .detail-panel.show {
+      display: block;
+    }
+
+    .detail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .detail-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fbf1c7;
+    }
+
+    .detail-badge {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      background: #fabd2f33;
+      color: #fabd2f;
+      border-radius: 12px;
+    }
+
+    .detail-coords {
+      font-size: 0.8rem;
+      color: #a89984;
+      margin-bottom: 16px;
+    }
+
+    .district-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .district-tag {
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      background: #504945;
+      color: #d5c4a1;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .district-tag:hover, .district-tag.active {
+      background: #665c54;
+      color: #fbf1c7;
+    }
+
+    .neighborhood-list {
+      margin-top: 16px;
+      display: none;
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 12px;
+      background: #282828;
+      border-radius: 6px;
+    }
+
+    .neighborhood-list.show {
+      display: block;
+    }
+
+    .neighborhood-list h4 {
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      color: #8ec07c;
+    }
+
+    .neighborhood-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 4px;
+      font-size: 0.8rem;
+      color: #bdae93;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 40px;
+      color: #665c54;
+    }
+
+    .info {
+      text-align: center;
+      padding: 40px;
+      color: #665c54;
+      font-size: 0.9rem;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid #504945;
+      color: #665c54;
+      font-size: 0.8rem;
+    }
+
+    footer a {
+      color: #83a598;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Türkiye İl / İlçe / Mahalle</h1>
+    <p class="subtitle">Turkey Province / District / Neighborhood Search</p>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num">81</div>
+        <div class="stat-label">İl / Province</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">973</div>
+        <div class="stat-label">İlçe / District</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">32.186</div>
+        <div class="stat-label">Mahalle / Neighborhood</div>
+      </div>
+    </div>
+
+    <div class="search-box">
+      <input type="text" id="search" placeholder="İl, ilçe veya mahalle ara... / Search province, district or neighborhood..." autocomplete="off">
+    </div>
+
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">Tümü</button>
+      <button class="filter-btn" data-filter="il">İller</button>
+      <button class="filter-btn" data-filter="ilce">İlçeler</button>
+      <button class="filter-btn" data-filter="mahalle">Mahalleler</button>
+    </div>
+
+    <div id="results" class="results">
+      <div class="info">Aramaya başlamak için yukarıya yazın.<br>Start typing above to search.</div>
+    </div>
+
+    <div id="detail" class="detail-panel"></div>
+
+    <footer>
+      Veri kaynağı / Data source: <a href="https://turkiyeapi.dev/" target="_blank">TurkiyeAPI</a>
+    </footer>
+  </div>
+
+  <script>
+    let data = null;
+    let activeFilter = "all";
+
+    fetch("turkiye_ilce_mahalle.json")
+      .then(r => r.json())
+      .then(d => { data = d; })
+      .catch(() => {
+        document.getElementById("results").innerHTML = '<div class="no-results">Veri yüklenemedi / Could not load data</div>';
+      });
+
+    const searchInput = document.getElementById("search");
+    const resultsDiv = document.getElementById("results");
+    const detailDiv = document.getElementById("detail");
+
+    document.querySelectorAll(".filter-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeFilter = btn.dataset.filter;
+        doSearch();
+      });
+    });
+
+    let debounceTimer;
+    searchInput.addEventListener("input", () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(doSearch, 200);
+    });
+
+    function normalize(str) {
+      return str
+        .replace(/İ/g, "i").replace(/I/g, "ı")
+        .toLowerCase()
+        .replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ö/g, "o")
+        .replace(/ş/g, "s").replace(/ü/g, "u").replace(/ı/g, "i");
+    }
+
+    function doSearch() {
+      if (!data) return;
+      const q = searchInput.value.trim();
+      if (q.length < 2) {
+        resultsDiv.innerHTML = '<div class="info">Aramaya başlamak için yukarıya yazın.<br>Start typing above to search.</div>';
+        detailDiv.classList.remove("show");
+        return;
+      }
+
+      const nq = normalize(q);
+      const results = [];
+      const limit = 50;
+
+      for (const [il, info] of Object.entries(data)) {
+        if (results.length >= limit) break;
+
+        const nIl = normalize(il);
+        if ((activeFilter === "all" || activeFilter === "il") && nIl.includes(nq)) {
+          results.push({ type: "il", name: il, info });
+        }
+
+        for (const [ilce, mahalleler] of Object.entries(info.ilceler)) {
+          if (results.length >= limit) break;
+
+          const nIlce = normalize(ilce);
+          if ((activeFilter === "all" || activeFilter === "ilce") && nIlce.includes(nq)) {
+            results.push({ type: "ilce", name: ilce, parent: il, info });
+          }
+
+          if (activeFilter === "all" || activeFilter === "mahalle") {
+            for (const m of mahalleler) {
+              if (results.length >= limit) break;
+              if (normalize(m).includes(nq)) {
+                results.push({ type: "mahalle", name: m, district: ilce, parent: il });
+              }
+            }
+          }
+        }
+      }
+
+      if (results.length === 0) {
+        resultsDiv.innerHTML = '<div class="no-results">Sonuç bulunamadı / No results found</div>';
+        detailDiv.classList.remove("show");
+        return;
+      }
+
+      const typeLabels = { il: "İl", ilce: "İlçe", mahalle: "Mahalle" };
+
+      resultsDiv.innerHTML = results.map((r, i) => {
+        let path = "";
+        if (r.type === "ilce") path = r.parent;
+        if (r.type === "mahalle") path = r.parent + " → " + r.district;
+
+        return `<div class="result-item" data-index="${i}">
+          <div class="result-type">${typeLabels[r.type]}</div>
+          <div class="result-name">${r.name}</div>
+          ${path ? `<div class="result-path">${path}</div>` : ""}
+        </div>`;
+      }).join("");
+
+      resultsDiv.querySelectorAll(".result-item").forEach((el, i) => {
+        el.addEventListener("click", () => showDetail(results[i]));
+      });
+    }
+
+    function showDetail(item) {
+      if (item.type === "il") {
+        showProvinceDetail(item.name, item.info);
+      } else if (item.type === "ilce") {
+        showProvinceDetail(item.parent, item.info, item.name);
+      } else {
+        const info = data[item.parent];
+        showProvinceDetail(item.parent, info, item.district);
+      }
+    }
+
+    function showProvinceDetail(il, info, activeDistrict) {
+      const coords = info.koordinatlar || {};
+      const districts = Object.keys(info.ilceler);
+
+      detailDiv.innerHTML = `
+        <div class="detail-header">
+          <div class="detail-title">${il}</div>
+          <div class="detail-badge">Plaka: ${info.plaka}</div>
+        </div>
+        ${coords.latitude ? `<div class="detail-coords">${coords.latitude}, ${coords.longitude}</div>` : ""}
+        <div class="district-list">
+          ${districts.map(d => `<span class="district-tag${d === activeDistrict ? " active" : ""}" data-district="${d}">${d}</span>`).join("")}
+        </div>
+        <div id="neighborhoods" class="neighborhood-list${activeDistrict ? " show" : ""}">
+          ${activeDistrict ? `<h4>${activeDistrict} Mahalleleri</h4><div class="neighborhood-grid">${info.ilceler[activeDistrict].map(m => `<span>${m}</span>`).join("")}</div>` : ""}
+        </div>
+      `;
+
+      detailDiv.classList.add("show");
+
+      detailDiv.querySelectorAll(".district-tag").forEach(tag => {
+        tag.addEventListener("click", () => {
+          detailDiv.querySelectorAll(".district-tag").forEach(t => t.classList.remove("active"));
+          tag.classList.add("active");
+          const d = tag.dataset.district;
+          const nDiv = document.getElementById("neighborhoods");
+          nDiv.innerHTML = `<h4>${d} Mahalleleri</h4><div class="neighborhood-grid">${info.ilceler[d].map(m => `<span>${m}</span>`).join("")}</div>`;
+          nDiv.classList.add("show");
+        });
+      });
+
+      detailDiv.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  </script>
+</body>
+</html>
